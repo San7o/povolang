@@ -18,7 +18,9 @@ CC?           = gcc
 OUT_NAME = lang
 OBJ      = lang.o \
            tokenizer.o \
-           token_stream.o
+           token_stream.o \
+           parser.o \
+           ast.o
 
 #
 # Commands

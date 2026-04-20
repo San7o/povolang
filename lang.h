@@ -66,25 +66,14 @@ typedef struct token {
     float floating;
     char* ident;
     char* str;
-  } value;
+  } val;
 } token_t;
 
 typedef struct tokenizer {
   const char *input;
   int size;
   int pos;
-
-  int row;
-  int col;
 } tokenizer_t;
-
-// Utility functions
-
-int isdigit(int c);
-int isalpha(int c);
-int isalnum(int c);
-int isspace(int c);
-int toint(int c);
 
 tokenizer_t init_tok(char* input);
 token_t next_tok(tokenizer_t *t);
@@ -134,19 +123,19 @@ typedef struct literal {
 
 typedef enum node_type {
   // Expressions
-  NODE_BINARY_OP,   // +, -, *, /
-  NODE_LITERAL,     // 1, 2.5, "hello"
-  NODE_VARIABLE,    // x, y
-  NODE_FN_CALL,     // print(x)
+  NODE_TYPE_BINARY_OP,   // +, -, *, /
+  NODE_TYPE_LITERAL,     // 1, 2.5, "hello"
+  NODE_TYPE_VARIABLE,    // x, y
+  NODE_TYPE_FN_CALL,     // print(x)
 
   // Statements / Control flow
-  NODE_IF,
-  NODE_FOR,
-  NODE_WHILE,
-  NODE_ASSIGNMENT,
-  NODE_BLOCK,
-  NODE_FN_DECL,
-  NODE_FN_IMPL,
+  NODE_TYPE_IF,
+  NODE_TYPE_FOR,
+  NODE_TYPE_WHILE,
+  NODE_TYPE_ASSIGNMENT,
+  NODE_TYPE_BLOCK,
+  NODE_TYPE_FN_DECL,
+  NODE_TYPE_FN_IMPL,
 } node_type_t;
 
 typedef enum op_type {
@@ -168,55 +157,59 @@ struct ast_node {
 
     struct {
       op_type_t op;
-      struct ast_node *left;
-      struct ast_node *right;
+      ast_node_t *left;
+      ast_node_t *right;
     } binary;
     
     struct {
-      struct ast_node *cond;
-      struct ast_node *then_block;
-      struct ast_node *else_block;
+      ast_node_t *cond;
+      ast_node_t *then_block;
+      ast_node_t *else_block;
     } if_stmt;
 
     struct {
-      struct ast_node *init;
-      struct ast_node *cond;
-      struct ast_node *step;
-      struct ast_node *body;
+      ast_node_t *init;
+      ast_node_t *cond;
+      ast_node_t *step;
+      ast_node_t *body;
     } for_stmt;
     
     struct {
-      struct ast_node *cond;
-      struct ast_node *body;
+      ast_node_t *cond;
+      ast_node_t *body;
     } while_stmt;
     
     struct {
-      struct ast_node **children;
+      ast_node_t **children;
+      size_t capacity;
       size_t count;
     } block;
 
     struct {
-      char *name;
-      struct ast_node *value;
+      char       *name;
+      ast_node_t *value;
     } assignment;
 
     struct {
       char        *fn_name;
       ast_node_t **args;
+      size_t       capacity;
       size_t       count;
     } fn_call;
 
     struct {
       char *name;
       char **params;
+      size_t capacity;
       size_t param_count;
     } fn_decl;
 
     struct {
       char *name;
       char **params;
-      size_t param_count;
-      struct ast_node *body;
+      size_t params_capacity;
+      size_t params_count;
+      ast_node_t *body;
     } fn_impl;
     
     literal_t literal;
@@ -224,6 +217,10 @@ struct ast_node {
     
   } val;
 };
+
+ast_node_t *ast_new_node(node_type_t type);
+void ast_free_node(ast_node_t *node);
+void ast_add_child_to_block(ast_node_t *block, ast_node_t *child);
 
 //
 // Parser

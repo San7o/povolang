@@ -37,7 +37,7 @@ void token_stream_add(token_stream_t *ts, token_t tok)
   {
     // Double the vector
     token_t *new_vec = malloc(sizeof(token_t) * ts->capacity * 2);
-    memcpy(new_vec, ts->tokens, ts->capacity * sizeof(token_t));
+    memcpy(new_vec, ts->tokens, ts->size * sizeof(token_t));
     free(ts->tokens);
     ts->tokens = new_vec;
     ts->capacity *= 2;

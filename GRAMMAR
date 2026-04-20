@@ -5,7 +5,7 @@ Terminals are enclosed in ``. Whitespaces are ignored.
 
 Starting symbol:
 
-    PROGRAM    ::= ( FN_IMPL | STMT )*
+    PROGRAM    ::= ( FN_DECL | FN_IMPL | STMT )*
 
 Literal:
 
