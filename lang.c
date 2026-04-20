@@ -9,7 +9,8 @@
 #include <stdbool.h>
 
 //
-// Lexer
+// Tokenizer
+// ---------
 //
 
 // C-like tokens
@@ -274,29 +275,75 @@ void dump_tok(tokenizer_t *t)
 
 //
 // Grammar
+// -------
 //
-
-// NUM       ::= [0123456789]
-// INTEGER   ::= NUM
-// FLOATING  ::= NUM.NUM
-// BOOLEAN   ::= true | false
-// STRING    ::= " ASCII* "
-// VALUE     ::= INTEGER | FLOATING | BOOLEAN | STRING
-// TODO
+// Terminals are enclosed in ``. Whitespaces are ignored.
+//
+// Starting symbol:
+//
+// PROGRAM    ::= ( FN_IMPL | STMT )*
+//
+// Literal:
+//
+// NUM        ::= [0-9]
+// INTEGER    ::= NUM
+// FLOATING   ::= NUM.NUM
+// BOOLEAN    ::= `true` | `false`
+// STRING     ::= `"` ASCII* `"`
+// IDENT      ::= [a-zA-Z][a-zA-Z0-9]*
+// LITERAL    ::= INTEGER | FLOATING | BOOLEAN | STRING
+//
+// EXPR       ::= ASSIGNMENT
+//              | ARITH_EXPR
+// ASSIGNMENT ::= IDENT `=` EXPR
+//
+// Math ops:
+// 
+// ARITH_EXPR   ::= TERM ( (`+` | `-` ) TERM )*
+// TERM         ::= FACTOR ( (`*` | `/`) FACTOR )*
+// FACTOR       ::= LITERAL | IDENT | FN_CALL | `(` EXPR `)`
+//
+// Note that these math operations are simply the non-left-recursive
+// version of the following grammar, which respects operator
+// precedence:
+//
+//         ARITH_EXPR   ::= ARITH_EXPR `+` TERM
+//                        | ARITH_EXPR `-` TERM
+//         TERM         ::= TERM `*` FACTOR
+//                          TERM `/` FACTOR
+// 
+//
+// Control flow statements:
+//
+// STMT       ::= IF_STMT | WHILE_STMT | FOR_STMT| BLOCK | EXPR `;`
+// BLOCK      ::= `{` STMT* `}`
+//
+// The `else` part of an if statement is optional, and the parser will
+// always match the closes if. This avoids ambiguity:
+//
+// IF_STMT    ::= `if` `(` EXPR `)` `then` BLOCK ( `else` BLOCK )?
+//
+// FOR_STMT   ::= `for` `(` ASSIGNMENT `;` EXPR `;` EXPR `)` BLOCK
+// WHILE_STMT ::= `while` `(` EXPR `)` BLOCK
+// FN_CALL    ::= IDENT `(` ( EXPR `,` )* `)`
+// FN_DECL    ::= fn IDENT ( ( IDENT , )* )
+// FN_IMPL    ::= fn IDENT ( ( IDENT , )* ) BLOCK
+//
 
 //
 // AST
+// ---
 //
 
-typedef enum value_type {
-  VALUE_TYPE_VOID = 0,
-  VALUE_TYPE_INT,
-  VALUE_TYPE_FLOAT,
-  VALUE_TYPE_BOOL,
-  VALUE_TYPE_STRING,
+typedef enum literal_type {
+  LITERAL_TYPE_VOID = 0,
+  LITERAL_TYPE_INT,
+  LITERAL_TYPE_FLOAT,
+  LITERAL_TYPE_BOOL,
+  LITERAL_TYPE_STRING,
 } value_type_t;
 
-typedef struct value {
+typedef struct literal {
   value_type_t type;
   union {
     int       integer;
@@ -304,7 +351,7 @@ typedef struct value {
     bool      boolean;
     char     *string;
   } val;
-} value_t;
+} literal_t;
 
 typedef enum node_type {
   // Expressions
@@ -393,7 +440,7 @@ struct ast_node {
       struct ast_node *body;
     } fn_impl;
     
-    value_t literal;
+    literal_t literal;
     char*   variable_name;
     
   } val;
