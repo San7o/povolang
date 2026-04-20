@@ -13,31 +13,49 @@
 // ---------
 //
 
-// C-like tokens
 typedef enum token_type {
-  TOK_NONE = 0,
+  TOK_EOF = 0,
+
+  // Literals
   TOK_INT,              // 123
   TOK_FLOAT,            // 123.123
   TOK_IDENT,            // hello
   TOK_STRING,           // "hello"
+  // Booleans
+  TOK_TRUE,
+  TOK_FALSE,
+
+  // Keywords
+  TOK_IF,
+  TOK_ELSE,
+  TOK_WHILE,
+  TOK_FOR,
+  TOK_FN,
+  TOK_RETURN,
+
+  // Symbols
   TOK_OPEN_PAREN,       // (
   TOK_CLOSE_PAREN,      // )
   TOK_OPEN_SQUARE,      // [
   TOK_CLOSE_SQUARE,     // ]
   TOK_OPEN_CURLY,       // {
   TOK_CLOSE_CURLY,      // }
-  TOK_COLON,            // ;
+  TOK_SEMICOLON,        // ;
   TOK_COMMA,            // ,
   
-  // Math ops
+  // Math ops and logic
   TOK_PLUS,             // +
   TOK_MINUS,            // -
   TOK_STAR,             // *
   TOK_DIV,              // /
-
-  // Logical ops
+  TOK_NOT,              // !
   TOK_AND,              // &&
   TOK_OR,               // ||
+  TOK_ASSIGN,           // =
+  TOK_EQUAL,            // ==
+  TOK_NOT_EQUAL,        // !=
+  TOK_LT,               // <
+  TOK_GT,               // >
 } token_type_t;
 
 typedef struct token {
@@ -85,7 +103,7 @@ tokenizer_t init_tok(char* input)
 token_t next_tok(tokenizer_t *t)
 {
   token_t tok = {
-    .type    = TOK_NONE,
+    .type    = TOK_EOF,
   };
   
   if (!t || t->pos >= t->size)
@@ -108,8 +126,38 @@ token_t next_tok(tokenizer_t *t)
   case ']': tok.type = TOK_CLOSE_SQUARE; t->pos++; return tok;
   case '{': tok.type = TOK_OPEN_CURLY;   t->pos++; return tok;
   case '}': tok.type = TOK_CLOSE_CURLY;  t->pos++; return tok;
-  case ';': tok.type = TOK_COLON;        t->pos++; return tok;
+  case ';': tok.type = TOK_SEMICOLON;    t->pos++; return tok;
   case ',': tok.type = TOK_COMMA;        t->pos++; return tok;
+  case '<': tok.type = TOK_LT;           t->pos++; return tok;
+  case '>': tok.type = TOK_GT;           t->pos++; return tok;
+  case '=': 
+  {
+    if (t->pos + 1 < t->size && t->input[t->pos+1] == '=')
+    {
+      tok.type = TOK_EQUAL;
+      t->pos++;
+      t->pos++;
+      return tok;
+    }
+    
+    tok.type = TOK_ASSIGN;
+    t->pos++;
+    return tok;
+  }
+  case '!': 
+  {
+    if (t->pos + 1 < t->size && t->input[t->pos+1] == '=')
+    {
+      tok.type = TOK_NOT_EQUAL;
+      t->pos++;
+      t->pos++;
+      return tok;
+    }
+    
+    tok.type = TOK_NOT;
+    t->pos++;
+    return tok;
+  }
   case '+': tok.type = TOK_PLUS;         t->pos++; return tok;
   case '-': tok.type = TOK_MINUS;        t->pos++; return tok;
   case '*': tok.type = TOK_STAR;         t->pos++; return tok;
@@ -129,6 +177,7 @@ token_t next_tok(tokenizer_t *t)
     if (t->pos+1 >= t->size) break;
     if (t->input[t->pos+1] == '|')
     {
+      t->pos += 2;
       tok.type = TOK_OR;
       return tok;
     }
@@ -231,11 +280,54 @@ token_t next_tok(tokenizer_t *t)
   while (isalnum(t->input[t->pos]) && t->pos < t->size) t->pos++;
 
   if (t->pos == t->size || t->pos == start) return tok;
-
+  
+  int len = t->pos - start;
+  // Check for keywords
+  if (len == 2 && strncmp(&t->input[start], "if", 2) == 0)
+  {
+    tok.type = TOK_IF;
+    return tok;
+  }
+  if (len == 4 && strncmp(&t->input[start], "else", 4) == 0)
+  {
+    tok.type = TOK_ELSE;
+    return tok;
+  }
+  if (len == 5 && strncmp(&t->input[start], "while", 5) == 0)
+  {
+    tok.type = TOK_WHILE;
+    return tok;
+  }
+  if (len == 3 && strncmp(&t->input[start], "for", 3) == 0)
+  {
+    tok.type = TOK_FOR;
+    return tok;
+  }
+  if (len == 2 && strncmp(&t->input[start], "fn", 2) == 0)
+  {
+    tok.type = TOK_FN;
+    return tok;
+  }
+  if (len == 6 && strncmp(&t->input[start], "return", 6) == 0)
+  {
+    tok.type = TOK_RETURN;
+    return tok;
+  }
+  if (len == 4 && strncmp(&t->input[start], "true", 4) == 0)
+  {
+    tok.type = TOK_TRUE;
+    return tok;
+  }
+  if (len == 5 && strncmp(&t->input[start], "false", 5) == 0)
+  {
+    tok.type = TOK_FALSE;
+    return tok;
+  }
+  
   char *str = malloc(t->pos - start);
   strncpy(str, &t->input[start], t->pos - start);
   str[t->pos - start] = '\0';
-      
+
   tok.type = TOK_IDENT;
   tok.value.ident = str;
   return tok;
@@ -244,28 +336,40 @@ token_t next_tok(tokenizer_t *t)
 void dump_tok(tokenizer_t *t)
 {
   token_t tok = next_tok(t);
-  while (tok.type != TOK_NONE)
+  while (tok.type != TOK_EOF)
   {
     switch (tok.type)
     {
     case TOK_INT:           printf("%d\n", tok.value.integer);  break;
     case TOK_FLOAT:         printf("%f\n", tok.value.floating); break;
-    case TOK_IDENT:         printf("%s\n", tok.value.ident);   free(tok.value.ident);  break;
-    case TOK_STRING:        printf("\"%s\"\n", tok.value.str); free(tok.value.str); break;
-    case TOK_OPEN_PAREN:    printf("(\n");  break;
-    case TOK_CLOSE_PAREN:   printf(")\n");  break;
-    case TOK_OPEN_SQUARE:   printf("[\n");  break;
-    case TOK_CLOSE_SQUARE:  printf("]\n");  break;
-    case TOK_OPEN_CURLY:    printf("{\n");  break;
-    case TOK_CLOSE_CURLY:   printf("}\n");  break;
-    case TOK_COLON:         printf(";\n");  break;
-    case TOK_COMMA:         printf(",\n");  break;
-    case TOK_PLUS:          printf("+\n");  break;
-    case TOK_MINUS:         printf("-\n");  break;
-    case TOK_STAR:          printf("*\n");  break;
-    case TOK_DIV:           printf("/\n");  break;
-    case TOK_AND:           printf("&&\n"); break;
-    case TOK_OR:            printf("||\n"); break;
+    case TOK_IDENT:         printf("%s\n", tok.value.ident);   free(tok.value.ident); break;
+    case TOK_STRING:        printf("\"%s\"\n", tok.value.str); free(tok.value.str);   break;
+    case TOK_IF:            printf("IF\n");     break;
+    case TOK_ELSE:          printf("ELSE\n");   break;
+    case TOK_WHILE:         printf("WHILE\n");  break;
+    case TOK_FOR:           printf("FOR\n");    break;
+    case TOK_FN:            printf("FN\n");     break;
+    case TOK_RETURN:        printf("RETURN\n"); break;
+    case TOK_OPEN_PAREN:    printf("(\n");      break;
+    case TOK_CLOSE_PAREN:   printf(")\n");      break;
+    case TOK_OPEN_SQUARE:   printf("[\n");      break;
+    case TOK_CLOSE_SQUARE:  printf("]\n");      break;
+    case TOK_OPEN_CURLY:    printf("{\n");      break;
+    case TOK_CLOSE_CURLY:   printf("}\n");      break;
+    case TOK_SEMICOLON:     printf(";\n");      break;
+    case TOK_COMMA:         printf(",\n");      break;
+    case TOK_PLUS:          printf("+\n");      break;
+    case TOK_MINUS:         printf("-\n");      break;
+    case TOK_STAR:          printf("*\n");      break;
+    case TOK_DIV:           printf("/\n");      break;
+    case TOK_NOT:           printf("!\n");      break;
+    case TOK_AND:           printf("&&\n");     break;
+    case TOK_OR:            printf("||\n");     break;
+    case TOK_ASSIGN:        printf("=\n");      break;
+    case TOK_EQUAL:         printf("==\n");     break;
+    case TOK_NOT_EQUAL:     printf("!=\n");     break;
+    case TOK_LT:            printf("<\n");      break;
+    case TOK_GT:            printf(">\n");      break;
     default:                printf("TOK_UNKNOWN\n"); break;
     }
 
@@ -321,7 +425,7 @@ void dump_tok(tokenizer_t *t)
 // The `else` part of an if statement is optional, and the parser will
 // always match the closes if. This avoids ambiguity:
 //
-// IF_STMT    ::= `if` `(` EXPR `)` `then` BLOCK ( `else` BLOCK )?
+// IF_STMT    ::= `if` `(` EXPR `)` BLOCK ( `else` BLOCK )?
 //
 // FOR_STMT   ::= `for` `(` ASSIGNMENT `;` EXPR `;` EXPR `)` BLOCK
 // WHILE_STMT ::= `while` `(` EXPR `)` BLOCK
@@ -456,7 +560,13 @@ struct ast_node {
 
 int main(void)
 {
-  char *input = "int main(void) { // comment!\n printf(\"Hello, world! %f\\n\", 69.420); }";
+  char *input = 
+    "int main(void) { "
+    "  // comment!\n"
+    "  printf(\"Hello, world! %f\\n\", 69.420);"
+    "  if (x < 10) return 0;"
+    "  else return 1;"
+    "}";
   tokenizer_t t = init_tok(input);
   dump_tok(&t);
   return 0;
