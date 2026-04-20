@@ -16,7 +16,9 @@ CC?           = gcc
 # Project files
 #
 OUT_NAME = lang
-OBJ      = lang.o
+OBJ      = lang.o \
+           tokenizer.o \
+           token_stream.o
 
 #
 # Commands
