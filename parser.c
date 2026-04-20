@@ -6,10 +6,7 @@
 #include "lang.h"
 
 #include <stdio.h>
-
-typedef struct parser {
-  token_stream_t *ts;
-} parser_t;
+#include <stdlib.h>
 
 token_t peek(parser_t *p)
 {
@@ -19,6 +16,14 @@ token_t peek(parser_t *p)
 void advance(parser_t *p)
 {
   token_stream_advance(p->ts);
+}
+
+void expect(parser_t *p, token_type_t token)
+{
+  if (peek(p).type != token)
+    fprintf(stderr, "Error: expected %d, got %d\n", peek(p).type, token);
+
+  exit(1);
 }
 
 void parser_init(parser_t *p, token_stream_t *ts)
@@ -38,16 +43,38 @@ void parser_init_from_input(parser_t *p, char *input)
 // STMT ::= IF_STMT | WHILE_STMT | FOR_STMT| BLOCK | EXPR `;`
 ast_node_t *parse_stmt(parser_t *p)
 {
-  (void) p;
-  // TODO
-  return NULL;
+  ast_node_t *node = NULL;
+  
+  switch(peek(p).type)
+  {
+  case TOK_IF:
+    // TODO: if statement
+    break;
+  case TOK_WHILE:
+    // TODO: while statement
+    break;
+  case TOK_FOR:
+    // TODO: for statement
+    break;
+  case TOK_OPEN_CURLY:
+    // TODO: block
+    break;
+  default:
+    // TODO: expr
+
+    expect(p, TOK_SEMICOLON);
+    break;
+  }
+  return node;
 }
 
 // FUNCTION ::= fn IDENT ( ( IDENT , )* ) BLOCK?
 ast_node_t *parse_function(parser_t *p)
 {
-  (void) p;
+  expect(p, TOK_FN);
+  
   // TODO
+  
   return NULL;
 }
 

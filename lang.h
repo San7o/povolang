@@ -104,11 +104,11 @@ void token_stream_dump(token_stream_t *ts);
 //
 
 typedef enum literal_type {
-  LITERAL_TYPE_VOID = 0,
-  LITERAL_TYPE_INT,
-  LITERAL_TYPE_FLOAT,
-  LITERAL_TYPE_BOOL,
-  LITERAL_TYPE_STRING,
+  LITERAL_VOID = 0,
+  LITERAL_INT,
+  LITERAL_FLOAT,
+  LITERAL_BOOL,
+  LITERAL_STRING,
 } value_type_t;
 
 typedef struct literal {
@@ -123,19 +123,19 @@ typedef struct literal {
 
 typedef enum node_type {
   // Expressions
-  NODE_TYPE_BINARY_OP,   // +, -, *, /
-  NODE_TYPE_LITERAL,     // 1, 2.5, "hello"
-  NODE_TYPE_VARIABLE,    // x, y
-  NODE_TYPE_FN_CALL,     // print(x)
+  NODE_BINARY_OP,   // +, -, *, /
+  NODE_LITERAL,     // 1, 2.5, "hello"
+  NODE_VARIABLE,    // x, y
+  NODE_FN_CALL,     // print(x)
 
   // Statements / Control flow
-  NODE_TYPE_IF,
-  NODE_TYPE_FOR,
-  NODE_TYPE_WHILE,
-  NODE_TYPE_ASSIGNMENT,
-  NODE_TYPE_BLOCK,
-  NODE_TYPE_FN_DECL,
-  NODE_TYPE_FN_IMPL,
+  NODE_IF,
+  NODE_FOR,
+  NODE_WHILE,
+  NODE_ASSIGNMENT,
+  NODE_BLOCK,
+  NODE_FN_DECL,
+  NODE_FN_IMPL,
 } node_type_t;
 
 typedef enum op_type {
@@ -226,6 +226,21 @@ void ast_add_child_to_block(ast_node_t *block, ast_node_t *child);
 // Parser
 // ------
 //
+
+typedef struct parser {
+  token_stream_t *ts;
+} parser_t;
+
+void parser_init(parser_t *p, token_stream_t *ts);
+void parser_init_from_input(parser_t *p, char *input);
+
+token_t peek(parser_t *p);
+void advance(parser_t *p);
+void expect(parser_t *p, token_type_t token); // exits of failure
+
+ast_node_t *parse_stmt(parser_t *p);
+ast_node_t *parse_function(parser_t *p);
+ast_node_t *parse_program(parser_t *p); // entry point
 
 // TODO
 
