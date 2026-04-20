@@ -333,9 +333,87 @@ token_t next_tok(tokenizer_t *t)
   return tok;
 }
 
-void dump_tok(tokenizer_t *t)
+// Dynamic array of tokens
+typedef struct token_stream {
+  token_t *tokens;
+  size_t   capacity;
+  size_t   size;
+  size_t   pos;
+} token_stream_t;
+
+void token_stream_init(token_stream_t *ts)
 {
-  token_t tok = next_tok(t);
+  if (!ts) return;
+
+  ts->tokens   = NULL;
+  ts->size     = 0;
+  ts->capacity = 0;
+  ts->pos      = 0;
+}
+
+void token_stream_add(token_stream_t *ts, token_t tok)
+{
+  if (!ts) return;
+
+  if (!ts->tokens)
+  {
+    ts->tokens   = malloc(sizeof(token_t) * 8);
+    ts->capacity = 8;
+
+    ts->tokens[0] = tok;
+    ts->size      = 1;
+    return;
+  }
+
+  if (ts->size >= ts->capacity)
+  {
+    // Double the vector
+    token_t *new_vec = malloc(sizeof(token_t) * ts->capacity * 2);
+    memcpy(new_vec, ts->tokens, ts->capacity * sizeof(token_t));
+    free(ts->tokens);
+    ts->tokens = new_vec;
+    ts->capacity *= 2;
+  }
+  
+  ts->tokens[ts->size] = tok;
+  ts->size++;
+  return;
+}
+
+token_t token_stream_peek(token_stream_t *ts)
+{
+  if (!ts || ts->pos == ts->size)
+    return (token_t) { .type = TOK_EOF };
+  return ts->tokens[ts->pos];
+}
+
+void token_stream_advance(token_stream_t *ts)
+{
+  if (!ts) return;
+  ts->pos++;
+}
+
+void token_stream_init_from_input(token_stream_t *ts, char *input)
+{
+  if (!ts) return;
+
+  token_stream_init(ts);
+  tokenizer_t t = init_tok(input);
+
+  token_t tok = next_tok(&t);
+  while (tok.type != TOK_EOF)
+  {
+    token_stream_add(ts, tok);
+    tok = next_tok(&t);
+  }
+
+  return;
+}
+
+
+void token_stream_dump(token_stream_t *ts)
+{
+  token_t tok = token_stream_peek(ts);
   while (tok.type != TOK_EOF)
   {
     switch (tok.type)
@@ -373,7 +451,8 @@ void dump_tok(tokenizer_t *t)
     default:                printf("TOK_UNKNOWN\n"); break;
     }
 
-    tok = next_tok(t);
+    token_stream_advance(ts);
+    tok = token_stream_peek(ts);
   }
 }
 
@@ -550,7 +629,7 @@ struct ast_node {
   } val;
 };
 
-
+// TODO
 
 //
 // Code Generation
@@ -567,7 +646,8 @@ int main(void)
     "  if (x < 10) return 0;"
     "  else return 1;"
     "}";
-  tokenizer_t t = init_tok(input);
-  dump_tok(&t);
+  token_stream_t ts;
+  token_stream_init_from_input(&ts, input);
+  token_stream_dump(&ts);
   return 0;
 }
