@@ -273,10 +273,133 @@ void dump_tok(tokenizer_t *t)
 }
 
 //
-// Parser
+// Grammar
 //
 
+// NUM       ::= [0123456789]
+// INTEGER   ::= NUM
+// FLOATING  ::= NUM.NUM
+// BOOLEAN   ::= true | false
+// STRING    ::= " ASCII* "
+// VALUE     ::= INTEGER | FLOATING | BOOLEAN | STRING
 // TODO
+
+//
+// AST
+//
+
+typedef enum value_type {
+  VALUE_TYPE_VOID = 0,
+  VALUE_TYPE_INT,
+  VALUE_TYPE_FLOAT,
+  VALUE_TYPE_BOOL,
+  VALUE_TYPE_STRING,
+} value_type_t;
+
+typedef struct value {
+  value_type_t type;
+  union {
+    int       integer;
+    float     floating;
+    bool      boolean;
+    char     *string;
+  } val;
+} value_t;
+
+typedef enum node_type {
+  // Expressions
+  NODE_BINARY_OP,   // +, -, *, /
+  NODE_LITERAL,     // 1, 2.5, "hello"
+  NODE_VARIABLE,    // x, y
+  NODE_FN_CALL,     // print(x)
+
+  // Statements / Control flow
+  NODE_IF,
+  NODE_FOR,
+  NODE_WHILE,
+  NODE_ASSIGNMENT,
+  NODE_BLOCK,
+  NODE_FN_DECL,
+  NODE_FN_IMPL,
+} node_type_t;
+
+typedef enum op_type {
+  OP_ADD,
+  OP_SUB,
+  OP_MUL,
+  OP_DIV,
+  OP_EQ,    // ==
+  OP_NEQ,   // !=
+  OP_GT,    // >
+  OP_LT,    // <
+} op_type_t;
+
+typedef struct ast_node ast_node_t;
+
+struct ast_node {
+  node_type_t type;
+  union {
+
+    struct {
+      op_type_t op;
+      struct ast_node *left;
+      struct ast_node *right;
+    } binary;
+    
+    struct {
+      struct ast_node *cond;
+      struct ast_node *then_block;
+      struct ast_node *else_block;
+    } if_stmt;
+
+    struct {
+      struct ast_node *init;
+      struct ast_node *cond;
+      struct ast_node *step;
+      struct ast_node *body;
+    } for_stmt;
+    
+    struct {
+      struct ast_node *cond;
+      struct ast_node *body;
+    } while_stmt;
+    
+    struct {
+      struct ast_node **children;
+      size_t count;
+    } block;
+
+    struct {
+      char *name;
+      struct ast_node *value;
+    } assignment;
+
+    struct {
+      char        *fn_name;
+      ast_node_t **args;
+      size_t       count;
+    } fn_call;
+
+    struct {
+      char *name;
+      char **params;
+      size_t param_count;
+    } fn_decl;
+
+    struct {
+      char *name;
+      char **params;
+      size_t param_count;
+      struct ast_node *body;
+    } fn_impl;
+    
+    value_t literal;
+    char*   variable_name;
+    
+  } val;
+};
+
+
 
 //
 // Code Generation
