@@ -42,18 +42,139 @@ void parser_init_from_input(parser_t *p, char *input)
 
 // Parse grammar
 
-
-// ARITH_EXPR  ::= TERM ( (`+` | `-` ) TERM )*
-// TERM        ::= FACTOR ( (`*` | `/`) FACTOR )*
-// FACTOR      ::= LITERAL | IDENT | FN_CALL | `(` EXPR `)`
-ast_node_t *parse_arith_expr(parser_t *p)
+// FACTOR ::= LITERAL | IDENT | FN_CALL | `(` EXPR `)`
+ast_node_t *parse_factor(parser_t *p)
 {
-  (void) p;
   ast_node_t *node = NULL;
 
-  // TODO
+  switch (peek(p).type)
+  {
+  case TOK_INT:
+  {
+    token_t tok = peek(p);
+    advance(p);
+    node = ast_new_node(NODE_LITERAL);
+    node->val.literal = (literal_t) {
+      .type = LITERAL_INT,
+      .val.integer = tok.val.integer,
+    };
+    break;
+  }
+  case TOK_FLOAT:
+  {
+    token_t tok = peek(p);
+    advance(p);
+    node = ast_new_node(NODE_LITERAL);
+    node->val.literal = (literal_t) {
+      .type = LITERAL_FLOAT,
+      .val.floating = tok.val.floating,
+    };
+    break;
+  }
+  case TOK_STRING:
+  {
+    token_t tok = peek(p);
+    advance(p);
+    node = ast_new_node(NODE_LITERAL);
+    node->val.literal = (literal_t) {
+      .type = LITERAL_STRING,
+      .val.string = tok.val.str,
+    };
+    break;
+  }
+  case TOK_TRUE:
+  {
+    advance(p);
+    node = ast_new_node(NODE_LITERAL);
+    node->val.literal = (literal_t) {
+      .type = LITERAL_BOOL,
+      .val.boolean = true,
+    };
+    break;
+  }
+  case TOK_FALSE:
+  {
+    advance(p);
+    node = ast_new_node(NODE_LITERAL);
+    node->val.literal = (literal_t) {
+      .type = LITERAL_BOOL,
+      .val.boolean = false,
+    };
+    break;
+  }
+  case TOK_IDENT:
+  {
+    token_t tok = peek(p);
+    advance(p);
+    node = ast_new_node(NODE_VARIABLE);
+    node->val.variable_name = tok.val.ident;
+    break;
+  }
+  case TOK_FN:
+    node = parse_fn_call(p);
+    break;
+  case TOK_OPEN_PAREN:
+    node = parse_expr(p);
+    expect(p, TOK_CLOSE_PAREN);
+    break;
+  default:
+    fprintf(stderr, "Error unexpected token %d\n", peek(p).type);
+    return NULL;
+  }
   
   return node;
+}
+
+// TERM ::= FACTOR ( (`*` | `/`) FACTOR )*
+ast_node_t *parse_term(parser_t *p)
+{
+  ast_node_t *left = parse_factor(p);
+
+  while (peek(p).type == TOK_STAR || peek(p).type == TOK_DIV)
+  {
+    token_t op = peek(p);
+    advance(p);
+
+    ast_node_t *right = parse_factor(p);
+
+    ast_node_t *new_node = ast_new_node(NODE_BINARY_OP);
+    if (op.type == TOK_STAR)
+      new_node->val.binary.op = OP_MUL;
+    else
+      new_node->val.binary.op = OP_DIV;      
+    new_node->val.binary.left = left;
+    new_node->val.binary.right = right;
+
+    left = new_node;
+  }
+
+  return left;
+}
+
+// ARITH_EXPR  ::= TERM ( (`+` | `-` ) TERM )*
+ast_node_t *parse_arith_expr(parser_t *p)
+{
+  ast_node_t *left = parse_term(p);
+
+  while (peek(p).type == TOK_PLUS || peek(p).type == TOK_MINUS)
+  {
+    token_t op = peek(p);
+    advance(p);
+
+    ast_node_t *right = parse_factor(p);
+
+    ast_node_t *new_node = ast_new_node(NODE_BINARY_OP);
+    if (op.type == TOK_PLUS)
+      new_node->val.binary.op = OP_ADD;
+    else
+      new_node->val.binary.op = OP_SUB;      
+    new_node->val.binary.left = left;
+    new_node->val.binary.right = right;
+
+    left = new_node;
+  }
+
+  return left;
 }
 
 // FN_CALL ::= IDENT `(` ( EXPR `,` )* `)`

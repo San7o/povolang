@@ -239,6 +239,9 @@ token_t peek(parser_t *p);
 void advance(parser_t *p);
 void expect(parser_t *p, token_type_t token); // exits on failure
 
+ast_node_t *parse_factor(parser_t *p);
+ast_node_t *parse_term(parser_t *p);
+ast_node_t *parse_fn_call(parser_t *p);
 ast_node_t *parse_arith_expr(parser_t *p);
 ast_node_t *parse_expr(parser_t *p);
 ast_node_t *parse_while_stmt(parser_t *p);
@@ -248,8 +251,6 @@ ast_node_t *parse_block(parser_t *p);
 ast_node_t *parse_stmt(parser_t *p);
 ast_node_t *parse_function(parser_t *p);
 ast_node_t *parse_program(parser_t *p); // entry point
-
-// TODO
 
 //
 // Code generation
