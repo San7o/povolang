@@ -149,14 +149,18 @@ void ast_free_node(ast_node_t *node)
   }
   case NODE_ASSIGNMENT:
   {
-    if (node->val.assignment.name)
+    if (node->val.assignment.left)
     {
-      free(node->val.assignment.name);
-      node->val.assignment.name = NULL;
+      ast_free_node(node->val.assignment.left);
+      free(node->val.assignment.left);
+      node->val.assignment.left = NULL;
     }
-    ast_free_node(node->val.assignment.value);
-    free(node->val.assignment.value);
-    node->val.assignment.value = NULL;
+    if (node->val.assignment.right)
+    {
+      ast_free_node(node->val.assignment.right);
+      free(node->val.assignment.right);
+      node->val.assignment.right = NULL;
+    }
     break;
   }
   case NODE_FN_DECL:

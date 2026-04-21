@@ -72,27 +72,20 @@ ast_node_t *parse_fn_call(parser_t *p)
   node = ast_new_node(NODE_FN_CALL);
   node->val.fn_call.fn_name = fn_name;
 
-  while (true)
+  if (peek(p).type != TOK_CLOSE_PAREN)
   {
-    ast_node_t *expr = parse_expr(p);
-    if (!expr)
-    {
-      fprintf(stderr, "Error parsing expression in function call\n");
-      ast_free_node(node);
-      return NULL;
-    }
+    do {
+      ast_node_t *expr = parse_expr(p);
+      if (!expr)
+      {
+        fprintf(stderr, "Error parsing expression in function call\n");
+        ast_free_node(node);
+        return NULL;
+      }
 
-    ast_add_arg_to_function(node, expr);
-
-    if (peek(p).type == TOK_CLOSE_PAREN)
-      break;
-
-    if (peek(p).type != TOK_SEMICOLON)
-    {
-      fprintf(stderr, "Error unexpected token in function call args: %d\n",
-              peek(p).type);
-    }
-    advance(p);
+      ast_add_arg_to_function(node, expr);
+    
+    } while (peek(p).type == TOK_COMMA);
   }
   
   expect(p, TOK_CLOSE_PAREN);
@@ -101,29 +94,29 @@ ast_node_t *parse_fn_call(parser_t *p)
   return node;
 }
 
-// ASSIGNMENT ::= IDENT `=` EXPR
-ast_node_t *parse_assignment(parser_t *p)
-{
-  (void) p;
-  ast_node_t *node = NULL;
-
-  // TODO
-  
-  return node;
-}
-
-// EXPR ::= ASSIGNMENT | ARITH_EXPR
+// EXPR ::= ARITH_EXPR ( `=` EXPR )?
 ast_node_t *parse_expr(parser_t *p)
 {
-  (void) p;
-  ast_node_t *node = NULL;
+  ast_node_t *left = parse_arith_expr(p);
+  if (!left) return NULL;
+
+  if (peek(p).type == TOK_ASSIGN)
+  {
+    advance(p);
+
+    ast_node_t *right = parse_expr(p);
+    if (!right) return NULL;
+
+    ast_node_t *assign_node = ast_new_node(NODE_ASSIGNMENT);
+    assign_node->val.assignment.left  = left;
+    assign_node->val.assignment.right = right;
+    return assign_node;
+  }
   
-  // TODO, may need 2 lookahead here...
-  
-  return node;
+  return left;
 }
 
-// FOR_STMT ::= `for` `(` ASSIGNMENT `;` EXPR `;` EXPR `)` BLOCK
+// FOR_STMT ::= `for` `(` EXPR `;` EXPR `;` EXPR `)` BLOCK
 ast_node_t *parse_for_stmt(parser_t *p)
 {
   ast_node_t *node = NULL;
@@ -137,7 +130,7 @@ ast_node_t *parse_for_stmt(parser_t *p)
   expect(p, TOK_OPEN_PAREN);
   advance(p);
 
-  init = parse_assignment(p);
+  init = parse_expr(p);
 
   expect(p, TOK_SEMICOLON);
   advance(p);
@@ -233,12 +226,15 @@ ast_node_t *parse_if_stmt(parser_t *p)
   return node;
 }
 
+// BLOCK ::= `{` STMT* `}`
 ast_node_t *parse_block(parser_t *p)
 {
   ast_node_t *node = NULL;
   
   expect(p, TOK_OPEN_CURLY);
 
+  node = ast_new_node(NODE_BLOCK);
+  
   while (peek(p).type != TOK_CLOSE_CURLY)
   {
     ast_node_t *stmt = parse_stmt(p);

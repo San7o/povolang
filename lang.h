@@ -186,8 +186,8 @@ struct ast_node {
     } block;
 
     struct {
-      char       *name;
-      ast_node_t *value;
+      ast_node_t *left;
+      ast_node_t *right;
     } assignment;
 
     struct {
@@ -239,6 +239,7 @@ token_t peek(parser_t *p);
 void advance(parser_t *p);
 void expect(parser_t *p, token_type_t token); // exits on failure
 
+ast_node_t *parse_arith_expr(parser_t *p);
 ast_node_t *parse_expr(parser_t *p);
 ast_node_t *parse_while_stmt(parser_t *p);
 ast_node_t *parse_for_stmt(parser_t *p);

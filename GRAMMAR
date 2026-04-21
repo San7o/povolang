@@ -17,9 +17,11 @@ Literal:
     IDENT      ::= [a-zA-Z][a-zA-Z0-9]*
     LITERAL    ::= INTEGER | FLOATING | BOOLEAN | STRING
 
-    EXPR       ::= ASSIGNMENT
-                 | ARITH_EXPR
-    ASSIGNMENT ::= IDENT `=` EXPR
+    EXPR       ::= ARITH_EXPR ( `=` EXPR )?
+
+Note that the assignment is just an expression that migh have an `=`
+ath the end. This is a cool trick that C uses to keep the grammar
+LL(1) which makes it easier for parsing.
 
 Math ops:
 
