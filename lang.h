@@ -201,14 +201,14 @@ struct ast_node {
       char *name;
       char **params;
       size_t capacity;
-      size_t param_count;
+      size_t count;
     } fn_decl;
 
     struct {
       char *name;
       char **params;
-      size_t params_capacity;
-      size_t params_count;
+      size_t capacity;
+      size_t count;
       ast_node_t *body;
     } fn_impl;
     

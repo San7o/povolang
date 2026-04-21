@@ -85,10 +85,10 @@ void token_stream_dump(token_stream_t *ts)
   {
     switch (tok.type)
     {
-    case TOK_INT:           printf("%d\n", tok.value.integer);  break;
-    case TOK_FLOAT:         printf("%f\n", tok.value.floating); break;
-    case TOK_IDENT:         printf("%s\n", tok.value.ident);   free(tok.value.ident); break;
-    case TOK_STRING:        printf("\"%s\"\n", tok.value.str); free(tok.value.str);   break;
+    case TOK_INT:           printf("%d\n", tok.val.integer);  break;
+    case TOK_FLOAT:         printf("%f\n", tok.val.floating); break;
+    case TOK_IDENT:         printf("%s\n", tok.val.ident);   free(tok.val.ident); break;
+    case TOK_STRING:        printf("\"%s\"\n", tok.val.str); free(tok.val.str);   break;
     case TOK_IF:            printf("IF\n");     break;
     case TOK_ELSE:          printf("ELSE\n");   break;
     case TOK_WHILE:         printf("WHILE\n");  break;

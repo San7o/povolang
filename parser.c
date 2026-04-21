@@ -401,15 +401,81 @@ ast_node_t *parse_stmt(parser_t *p)
   return node;
 }
 
+#define args_append(xs, x)                                                           \
+    do {                                                                             \
+        if ((xs)->count >= (xs)->capacity) {                                         \
+            if ((xs)->capacity == 0) (xs)->capacity = 2;                             \
+            else (xs)->capacity *= 2;                                                \
+            (xs)->args = realloc((xs)->args, (xs)->capacity*sizeof(*(xs)->args));    \
+        }                                                                            \
+                                                                                     \
+        (xs)->args[(xs)->count++] = (x);                                             \
+    } while (0)
+
+typedef struct args {
+  char  **args;
+  size_t  count;
+  size_t  capacity;
+} args_t;
+
 // FN_DECL    ::= fn IDENT ( ( IDENT , )* )
 // FN_IMPL    ::= fn IDENT ( ( IDENT , )* ) BLOCK
 ast_node_t *parse_function(parser_t *p)
 {
+  char *fn_name = NULL;
   expect(p, TOK_FN);
-  
-  // TODO
-  
-  return NULL;
+  advance(p);
+
+  expect(p, TOK_IDENT);
+  fn_name = peek(p).val.str;
+
+  expect(p, TOK_OPEN_PAREN);
+  advance(p);
+
+  args_t args = {0};
+
+  while (peek(p).type != TOK_CLOSE_PAREN)
+  {
+    expect(p, TOK_IDENT);
+    char* arg = peek(p).val.ident;
+    advance(p);
+
+    args_append(&args, arg);
+
+    
+    if (peek(p).type != TOK_CLOSE_PAREN && peek(p).type != TOK_COMMA)
+    {
+      fprintf(stderr, "Error: expected `)` or `,`, but got %d",
+              peek(p).type);
+      return NULL;
+    }
+  }
+
+  expect(p, TOK_CLOSE_PAREN);
+  advance(p);
+
+  if (peek(p).type == TOK_OPEN_CURLY)
+  {
+    // Impl
+    ast_node_t *block = parse_block(p);
+
+    ast_node_t *node = ast_new_node(NODE_FN_IMPL);
+    node->val.fn_impl.name = fn_name;
+    node->val.fn_impl.body = block;
+    node->val.fn_impl.params = args.args;
+    node->val.fn_impl.count = args.count;
+    node->val.fn_impl.capacity = args.count;
+
+    return node;
+  }
+
+  ast_node_t *node = ast_new_node(NODE_FN_DECL);  
+  node->val.fn_impl.name = fn_name;
+  node->val.fn_decl.params = args.args;
+  node->val.fn_decl.count = args.count;
+  node->val.fn_decl.capacity = args.count;
+
+  return node;
 }
 
 // PROGRAM  ::= ( FN_DECL | FN_IMPL | STMT )*

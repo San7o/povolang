@@ -172,7 +172,7 @@ void ast_free_node(ast_node_t *node)
     }
     if (node->val.fn_decl.params)
     {
-      for (size_t i = 0; i < node->val.fn_decl.param_count; ++i)
+      for (size_t i = 0; i < node->val.fn_decl.count; ++i)
       {
         free(node->val.fn_decl.params[i]);
         node->val.fn_decl.params[i] = NULL;
@@ -191,15 +191,15 @@ void ast_free_node(ast_node_t *node)
     }
     if (node->val.fn_impl.params)
     {
-      for (size_t i = 0; i < node->val.fn_impl.params_count; ++i)
+      for (size_t i = 0; i < node->val.fn_impl.count; ++i)
       {
         free(node->val.fn_impl.params[i]);
         node->val.fn_impl.params[i] = NULL;
       }
       free(node->val.fn_impl.params);
       node->val.fn_impl.params = NULL;
-      node->val.fn_impl.params_capacity = 0;
-      node->val.fn_impl.params_count = 0;
+      node->val.fn_impl.capacity = 0;
+      node->val.fn_impl.count = 0;
     }
     if (node->val.fn_impl.body)
     {

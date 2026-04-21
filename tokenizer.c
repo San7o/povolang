@@ -146,7 +146,7 @@ token_t next_tok(tokenizer_t *t)
 
     t->pos = end + 1;
     tok.type = TOK_STRING;
-    tok.value.str = str;
+    tok.val.str = str;
     return tok;
   }
   case '/':
@@ -196,13 +196,13 @@ token_t next_tok(tokenizer_t *t)
       }
 
       tok.type = TOK_FLOAT;
-      tok.value.floating = fnum;
+      tok.val.floating = fnum;
       return tok;
     }
     else
     {
       tok.type = TOK_INT;
-      tok.value.integer = num;
+      tok.val.integer = num;
       return tok;
     }
   }
@@ -261,6 +261,6 @@ token_t next_tok(tokenizer_t *t)
   str[t->pos - start] = '\0';
 
   tok.type = TOK_IDENT;
-  tok.value.ident = str;
+  tok.val.ident = str;
   return tok;
 }
