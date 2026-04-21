@@ -18,7 +18,7 @@ Literal:
     LITERAL    ::= INTEGER | FLOATING | BOOLEAN | STRING
 
     EXPR       ::= ASSIGNMENT
-             | ARITH_EXPR
+                 | ARITH_EXPR
     ASSIGNMENT ::= IDENT `=` EXPR
 
 Math ops:

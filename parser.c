@@ -40,6 +40,223 @@ void parser_init_from_input(parser_t *p, char *input)
   token_stream_init_from_input(p->ts, input);
 }
 
+// Parse grammar
+
+
+// ARITH_EXPR  ::= TERM ( (`+` | `-` ) TERM )*
+// TERM        ::= FACTOR ( (`*` | `/`) FACTOR )*
+// FACTOR      ::= LITERAL | IDENT | FN_CALL | `(` EXPR `)`
+ast_node_t *parse_arith_expr(parser_t *p)
+{
+  (void) p;
+  ast_node_t *node = NULL;
+
+  // TODO
+  
+  return node;
+}
+
+// FN_CALL ::= IDENT `(` ( EXPR `,` )* `)`
+ast_node_t *parse_fn_call(parser_t *p)
+{
+  ast_node_t *node = NULL;
+  char *fn_name    = NULL;
+
+  expect(p, TOK_IDENT);
+  fn_name = peek(p).val.ident;
+  advance(p);
+
+  expect(p, TOK_OPEN_PAREN);
+  advance(p);
+
+  node = ast_new_node(NODE_FN_CALL);
+  node->val.fn_call.fn_name = fn_name;
+
+  while (true)
+  {
+    ast_node_t *expr = parse_expr(p);
+    if (!expr)
+    {
+      fprintf(stderr, "Error parsing expression in function call\n");
+      ast_free_node(node);
+      return NULL;
+    }
+
+    ast_add_arg_to_function(node, expr);
+
+    if (peek(p).type == TOK_CLOSE_PAREN)
+      break;
+
+    if (peek(p).type != TOK_SEMICOLON)
+    {
+      fprintf(stderr, "Error unexpected token in function call args: %d\n",
+              peek(p).type);
+    }
+    advance(p);
+  }
+  
+  expect(p, TOK_CLOSE_PAREN);
+  advance(p);
+  
+  return node;
+}
+
+// ASSIGNMENT ::= IDENT `=` EXPR
+ast_node_t *parse_assignment(parser_t *p)
+{
+  (void) p;
+  ast_node_t *node = NULL;
+
+  // TODO
+  
+  return node;
+}
+
+// EXPR ::= ASSIGNMENT | ARITH_EXPR
+ast_node_t *parse_expr(parser_t *p)
+{
+  (void) p;
+  ast_node_t *node = NULL;
+  
+  // TODO, may need 2 lookahead here...
+  
+  return node;
+}
+
+// FOR_STMT ::= `for` `(` ASSIGNMENT `;` EXPR `;` EXPR `)` BLOCK
+ast_node_t *parse_for_stmt(parser_t *p)
+{
+  ast_node_t *node = NULL;
+  ast_node_t *init = NULL;
+  ast_node_t *cond = NULL;
+  ast_node_t *step = NULL;
+  ast_node_t *body = NULL;
+
+  expect(p, TOK_FOR);
+  advance(p);
+  expect(p, TOK_OPEN_PAREN);
+  advance(p);
+
+  init = parse_assignment(p);
+
+  expect(p, TOK_SEMICOLON);
+  advance(p);
+
+  cond = parse_expr(p);
+
+  expect(p, TOK_SEMICOLON);
+  advance(p);
+
+  step = parse_expr(p);
+  advance(p);
+
+  expect(p, TOK_CLOSE_PAREN);
+  advance(p);
+
+  body = parse_block(p);
+
+  node = ast_new_node(NODE_FOR);
+  node->val.for_stmt.init = init;
+  node->val.for_stmt.cond = cond;
+  node->val.for_stmt.step = step;
+  node->val.for_stmt.body = body;
+  
+  return node;
+}
+
+// WHILE_STMT ::= `while` `(` EXPR `)` BLOCK`
+ast_node_t *parse_while_stmt(parser_t *p)
+{
+  ast_node_t *node = NULL;
+  ast_node_t *cond = NULL;
+  ast_node_t *body = NULL;
+
+  expect(p, TOK_WHILE);
+  advance(p);
+  expect(p, TOK_OPEN_PAREN);
+  advance(p);
+
+  cond = parse_expr(p);
+
+  expect(p, TOK_CLOSE_PAREN);
+
+  body = parse_block(p);
+
+  node = ast_new_node(NODE_WHILE);
+  node->val.while_stmt.cond = cond;
+  node->val.while_stmt.body = body;
+  
+  return node;
+}
+
+// IF_STMT ::= `if` `(` EXPR `)` BLOCK ( `else` BLOCK )?
+ast_node_t *parse_if_stmt(parser_t *p)
+{
+  ast_node_t *node = NULL;
+  ast_node_t *cond = NULL;
+  ast_node_t *then_block = NULL;
+  ast_node_t *else_block = NULL;
+
+  expect(p, TOK_IF);
+  advance(p);
+  expect(p, TOK_OPEN_PAREN);
+  advance(p);
+
+  cond = parse_expr(p);
+  if (!cond)
+  {
+    fprintf(stderr, "Error: parsing if condition\n");
+    return NULL;
+  }
+
+  expect(p, TOK_CLOSE_PAREN);
+
+  then_block = parse_block(p);
+  if (!then_block)
+  {
+    fprintf(stderr, "Error: parsing if block\n");
+    ast_free_node(cond);
+    return NULL;
+  }
+
+  if (peek(p).type == TOK_ELSE)
+  {
+    advance(p);
+    else_block = parse_block(p);
+  }
+
+  node = ast_new_node(NODE_IF);
+  node->val.if_stmt.cond = cond;
+  node->val.if_stmt.then_block = then_block;
+  node->val.if_stmt.else_block = else_block;
+  
+  return node;
+}
+
+ast_node_t *parse_block(parser_t *p)
+{
+  ast_node_t *node = NULL;
+  
+  expect(p, TOK_OPEN_CURLY);
+
+  while (peek(p).type != TOK_CLOSE_CURLY)
+  {
+    ast_node_t *stmt = parse_stmt(p);
+    if (!stmt)
+    {
+      fprintf(stderr, "Error parsing statement in block\n");
+      return NULL;
+    }
+
+    ast_add_child_to_block(node, stmt);
+  }
+  
+  expect(p, TOK_CLOSE_CURLY);
+  advance(p);
+
+  return node;
+}
+
 // STMT ::= IF_STMT | WHILE_STMT | FOR_STMT| BLOCK | EXPR `;`
 ast_node_t *parse_stmt(parser_t *p)
 {
@@ -48,27 +265,27 @@ ast_node_t *parse_stmt(parser_t *p)
   switch(peek(p).type)
   {
   case TOK_IF:
-    // TODO: if statement
+    node = parse_if_stmt(p);
     break;
   case TOK_WHILE:
-    // TODO: while statement
+    node = parse_while_stmt(p);
     break;
   case TOK_FOR:
-    // TODO: for statement
+    node = parse_for_stmt(p);
     break;
   case TOK_OPEN_CURLY:
-    // TODO: block
+    node = parse_block(p);
     break;
   default:
-    // TODO: expr
-
+    node = parse_expr(p);
     expect(p, TOK_SEMICOLON);
     break;
   }
   return node;
 }
 
-// FUNCTION ::= fn IDENT ( ( IDENT , )* ) BLOCK?
+// FN_DECL    ::= fn IDENT ( ( IDENT , )* )
+// FN_IMPL    ::= fn IDENT ( ( IDENT , )* ) BLOCK
 ast_node_t *parse_function(parser_t *p)
 {
   expect(p, TOK_FN);

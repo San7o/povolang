@@ -11,6 +11,7 @@
 ast_node_t *ast_new_node(node_type_t type)
 {
   ast_node_t *node = malloc(sizeof(ast_node_t));
+  memset(node, 0, sizeof(ast_node_t));
   node->type = type;
   return node;
 }
@@ -21,9 +22,9 @@ void ast_free_node(ast_node_t *node)
 
   switch(node->type)
   {
-  case NODE_TYPE_LITERAL:
+  case NODE_LITERAL:
   {
-    if (node->val.literal.type == LITERAL_TYPE_STRING)
+    if (node->val.literal.type == LITERAL_STRING)
       if (node->val.literal.val.string)
       {
         free(node->val.literal.val.string);
@@ -32,7 +33,7 @@ void ast_free_node(ast_node_t *node)
     
     break;
   }
-  case NODE_TYPE_VARIABLE:
+  case NODE_VARIABLE:
   {
     if (node->val.variable_name)
     {
@@ -41,7 +42,7 @@ void ast_free_node(ast_node_t *node)
     }
     break;
   }
-  case NODE_TYPE_FN_CALL:
+  case NODE_FN_CALL:
   {
     if (node->val.fn_call.fn_name)
     {
@@ -63,7 +64,7 @@ void ast_free_node(ast_node_t *node)
     }
     break;
   }
-  case NODE_TYPE_IF:
+  case NODE_IF:
   {
     if (node->val.if_stmt.cond)
     {
@@ -85,7 +86,7 @@ void ast_free_node(ast_node_t *node)
     }
     break;
   }
-  case NODE_TYPE_FOR:
+  case NODE_FOR:
   {
     if (node->val.for_stmt.init)
     {
@@ -113,7 +114,7 @@ void ast_free_node(ast_node_t *node)
     }
     break;
   }
-  case NODE_TYPE_WHILE:
+  case NODE_WHILE:
   {
     if (node->val.while_stmt.cond)
     {
@@ -129,7 +130,7 @@ void ast_free_node(ast_node_t *node)
     }
     break;
   }
-  case NODE_TYPE_BLOCK:
+  case NODE_BLOCK:
   {
     if (node->val.block.children)
     {
@@ -146,7 +147,7 @@ void ast_free_node(ast_node_t *node)
     }
     break;
   }
-  case NODE_TYPE_ASSIGNMENT:
+  case NODE_ASSIGNMENT:
   {
     if (node->val.assignment.name)
     {
@@ -158,7 +159,7 @@ void ast_free_node(ast_node_t *node)
     node->val.assignment.value = NULL;
     break;
   }
-  case NODE_TYPE_FN_DECL:
+  case NODE_FN_DECL:
   {
     if (node->val.fn_decl.name)
     {
@@ -177,7 +178,7 @@ void ast_free_node(ast_node_t *node)
     }
     break;
   }
-  case NODE_TYPE_FN_IMPL:
+  case NODE_FN_IMPL:
   {
     if (node->val.fn_impl.name)
     {
@@ -237,5 +238,34 @@ void ast_add_child_to_block(ast_node_t *block, ast_node_t *child)
   
   block->val.block.children[block->val.block.count] = child;
   block->val.block.count++;
+  return;
+}
+
+void ast_add_arg_to_function(ast_node_t *fn_call, ast_node_t *arg)
+{
+  if (!fn_call | !arg) return;
+
+  if (!fn_call->val.fn_call.args)
+  {
+    fn_call->val.fn_call.args  = malloc(sizeof(ast_node_t) * 8);
+    fn_call->val.fn_call.capacity = 8;
+
+    fn_call->val.fn_call.args[0] = arg;
+    fn_call->val.fn_call.count       = 1;
+    return;
+  }
+
+  if (fn_call->val.fn_call.count >= fn_call->val.fn_call.capacity)
+  {
+    // Double the vector
+    ast_node_t **new_vec = malloc(sizeof(ast_node_t*) * fn_call->val.fn_call.capacity * 2);
+    memcpy(new_vec, fn_call->val.fn_call.args, fn_call->val.fn_call.count * sizeof(ast_node_t*));
+    free(fn_call->val.fn_call.args);
+    fn_call->val.fn_call.args = new_vec;
+    fn_call->val.fn_call.capacity *= 2;
+  }
+  
+  fn_call->val.fn_call.args[fn_call->val.fn_call.count] = arg;
+  fn_call->val.fn_call.count++;
   return;
 }

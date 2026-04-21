@@ -221,6 +221,7 @@ struct ast_node {
 ast_node_t *ast_new_node(node_type_t type);
 void ast_free_node(ast_node_t *node);
 void ast_add_child_to_block(ast_node_t *block, ast_node_t *child);
+void ast_add_arg_to_function(ast_node_t *fn_call, ast_node_t *arg);
 
 //
 // Parser
@@ -236,8 +237,13 @@ void parser_init_from_input(parser_t *p, char *input);
 
 token_t peek(parser_t *p);
 void advance(parser_t *p);
-void expect(parser_t *p, token_type_t token); // exits of failure
+void expect(parser_t *p, token_type_t token); // exits on failure
 
+ast_node_t *parse_expr(parser_t *p);
+ast_node_t *parse_while_stmt(parser_t *p);
+ast_node_t *parse_for_stmt(parser_t *p);
+ast_node_t *parse_if_stmt(parser_t *p);
+ast_node_t *parse_block(parser_t *p);
 ast_node_t *parse_stmt(parser_t *p);
 ast_node_t *parse_function(parser_t *p);
 ast_node_t *parse_program(parser_t *p); // entry point
