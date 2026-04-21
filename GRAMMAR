@@ -21,7 +21,7 @@ Expression:
 
     EXPR       ::= ARITH_EXPR ( `=` EXPR )?
 
-Note that the assignment is just an expression that migh have an `=`
+Note that the assignment is just an expression that might have an `=`
 at the end. This is a cool trick that C uses to keep the grammar LL(1)
 which makes it easier for parsing.
 
@@ -47,13 +47,16 @@ Statements:
 
 Control flow statements:
 
+    IF_STMT    ::= `if` `(` EXPR `)` BLOCK ( `else` BLOCK )?
+
 The `else` part of an if statement is optional, and the parser will
 always match the closest if. This avoids ambiguity:
 
-    IF_STMT    ::= `if` `(` EXPR `)` BLOCK ( `else` BLOCK )?
-
     FOR_STMT   ::= `for` `(` ASSIGNMENT `;` EXPR `;` EXPR `)` BLOCK
     WHILE_STMT ::= `while` `(` EXPR `)` BLOCK
+
+Functions:
+
     FN_CALL    ::= IDENT `(` ( EXPR `,` )* `)`
     FN_DECL    ::= fn IDENT ( ( IDENT , )* )
     FN_IMPL    ::= fn IDENT ( ( IDENT , )* ) BLOCK
