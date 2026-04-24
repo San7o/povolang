@@ -21,9 +21,22 @@ void advance(parser_t *p)
 void expect(parser_t *p, token_type_t token)
 {
   if (peek(p).type != token)
-    fprintf(stderr, "Error: expected %d, got %d\n", peek(p).type, token);
-
-  exit(1);
+  {
+    size_t start = p->ts->pos;
+    if (start - 5 > 0)
+      start -= 5;
+    for (size_t i = start; i < p->ts->pos; ++i)
+    {
+      token_dump(p->ts->tokens[i]);
+      printf(" ");
+    }
+    printf("\n");
+      
+    printf("Error: expected %s, got %s\n",
+            token_string(token), token_string(peek(p).type));
+    fflush(stdout);
+    exit(1);
+  }
 }
 
 void parser_init(parser_t *p, token_stream_t *ts)
@@ -37,12 +50,13 @@ void parser_init_from_input(parser_t *p, char *input)
 {
   if (!p || !input) return;
 
+  p->ts = malloc(sizeof(token_stream_t));
   token_stream_init_from_input(p->ts, input);
 }
 
 // Parse grammar
 
-// FACTOR ::= LITERAL | IDENT | FN_CALL | `(` EXPR `)`
+// FACTOR ::= LITERAL | IDENT ( `(` ARGS `)` )? | FN_CALL | `(` EXPR `)`
 ast_node_t *parse_factor(parser_t *p)
 {
   ast_node_t *node = NULL;
@@ -104,21 +118,52 @@ ast_node_t *parse_factor(parser_t *p)
   }
   case TOK_IDENT:
   {
-    token_t tok = peek(p);
+    token_t name = peek(p);
     advance(p);
-    node = ast_new_node(NODE_VARIABLE);
-    node->val.variable_name = tok.val.ident;
+
+    // fn call
+    if (peek(p).type == TOK_OPEN_PAREN)
+    {
+      node = ast_new_node(NODE_FN_CALL);
+      node->val.fn_call.fn_name = name.val.ident;
+
+      if (peek(p).type != TOK_CLOSE_PAREN)
+      {
+        do {
+          advance(p); // Advance comma or open paren
+
+          ast_node_t *expr = parse_expr(p);
+          if (!expr)
+          {
+            fprintf(stderr, "Error parsing expression in function call\n");
+            break;
+          }
+
+          ast_add_arg_to_function(node, expr);
+    
+        } while (peek(p).type == TOK_COMMA);
+      }
+
+      expect(p, TOK_CLOSE_PAREN);
+      advance(p);
+    }
+    else
+    {
+      node = ast_new_node(NODE_VARIABLE);
+      node->val.variable_name = name.val.ident;
+    }
+    
     break;
   }
-  case TOK_FN:
-    node = parse_fn_call(p);
-    break;
   case TOK_OPEN_PAREN:
+    advance(p);
     node = parse_expr(p);
     expect(p, TOK_CLOSE_PAREN);
+    advance(p);
     break;
   default:
-    fprintf(stderr, "Error unexpected token %d\n", peek(p).type);
+    fprintf(stderr, "Error unexpected token %s\n",
+            token_string(peek(p).type));
     return NULL;
   }
   
@@ -177,48 +222,80 @@ ast_node_t *parse_arith_expr(parser_t *p)
   return left;
 }
 
-// FN_CALL ::= IDENT `(` ( EXPR `,` )* `)`
-ast_node_t *parse_fn_call(parser_t *p)
+// COMPARISON_OP   ::= ( `==` | `!=` | `<` | `>` )
+// COMPARISON_EXPR ::= ARITH_EXPR ( COMPARISON_OP ARITH_EXPR )*
+ast_node_t *parse_comparison(parser_t *p)
 {
-  ast_node_t *node = NULL;
-  char *fn_name    = NULL;
+  ast_node_t *left = parse_arith_expr(p);
 
-  expect(p, TOK_IDENT);
-  fn_name = peek(p).val.ident;
-  advance(p);
-
-  expect(p, TOK_OPEN_PAREN);
-  advance(p);
-
-  node = ast_new_node(NODE_FN_CALL);
-  node->val.fn_call.fn_name = fn_name;
-
-  if (peek(p).type != TOK_CLOSE_PAREN)
+  // Comparison
+  while (peek(p).type == TOK_EQUAL || peek(p).type == TOK_NOT_EQUAL
+         || peek(p).type == TOK_LT || peek(p).type == TOK_GT)
   {
-    do {
-      ast_node_t *expr = parse_expr(p);
-      if (!expr)
-      {
-        fprintf(stderr, "Error parsing expression in function call\n");
-        ast_free_node(node);
-        return NULL;
-      }
-
-      ast_add_arg_to_function(node, expr);
-    
-    } while (peek(p).type == TOK_COMMA);
+    token_t tok = peek(p);
+    switch (tok.type)
+    {
+    case TOK_EQUAL:
+    {
+      advance(p);
+      ast_node_t *right = parse_arith_expr(p);
+        
+      ast_node_t *node = ast_new_node(NODE_BINARY_OP);
+      node->val.binary.op    = OP_EQ;
+      node->val.binary.left  = left;
+      node->val.binary.right = right;
+        
+      return node;
+    }
+    case TOK_NOT_EQUAL:
+    {
+      advance(p);
+      ast_node_t *right = parse_arith_expr(p);
+        
+      ast_node_t *node = ast_new_node(NODE_BINARY_OP);
+      node->val.binary.op    = OP_NEQ;
+      node->val.binary.left  = left;
+      node->val.binary.right = right;
+        
+      return node;
+    }
+    case TOK_LT:
+    {
+      advance(p);
+      ast_node_t *right = parse_arith_expr(p);
+        
+      ast_node_t *node = ast_new_node(NODE_BINARY_OP);
+      node->val.binary.op    = OP_LT;
+      node->val.binary.left  = left;
+      node->val.binary.right = right;
+        
+      return node;
+    }
+    case TOK_GT:
+    {
+      advance(p);
+      ast_node_t *right = parse_arith_expr(p);
+        
+      ast_node_t *node = ast_new_node(NODE_BINARY_OP);
+      node->val.binary.op    = OP_GT;
+      node->val.binary.left  = left;
+      node->val.binary.right = right;
+        
+      return node;
+    }
+    default:
+      fprintf(stderr, "Error unknown operator in expression\n");
+      return NULL;
+    }
   }
-  
-  expect(p, TOK_CLOSE_PAREN);
-  advance(p);
-  
-  return node;
+
+  return left;
 }
 
 // EXPR ::= ARITH_EXPR ( `=` EXPR )?
 ast_node_t *parse_expr(parser_t *p)
 {
-  ast_node_t *left = parse_arith_expr(p);
+  ast_node_t *left = parse_comparison(p);
   if (!left) return NULL;
 
   if (peek(p).type == TOK_ASSIGN)
@@ -293,6 +370,7 @@ ast_node_t *parse_while_stmt(parser_t *p)
   cond = parse_expr(p);
 
   expect(p, TOK_CLOSE_PAREN);
+  advance(p);
 
   body = parse_block(p);
 
@@ -324,6 +402,7 @@ ast_node_t *parse_if_stmt(parser_t *p)
   }
 
   expect(p, TOK_CLOSE_PAREN);
+  advance(p);
 
   then_block = parse_block(p);
   if (!then_block)
@@ -353,6 +432,7 @@ ast_node_t *parse_block(parser_t *p)
   ast_node_t *node = NULL;
   
   expect(p, TOK_OPEN_CURLY);
+  advance(p);
 
   node = ast_new_node(NODE_BLOCK);
   
@@ -396,6 +476,7 @@ ast_node_t *parse_stmt(parser_t *p)
   default:
     node = parse_expr(p);
     expect(p, TOK_SEMICOLON);
+    advance(p);
     break;
   }
   return node;
@@ -428,6 +509,7 @@ ast_node_t *parse_function(parser_t *p)
 
   expect(p, TOK_IDENT);
   fn_name = peek(p).val.str;
+  advance(p);
 
   expect(p, TOK_OPEN_PAREN);
   advance(p);

@@ -78,6 +78,8 @@ typedef struct tokenizer {
 tokenizer_t init_tok(char* input);
 token_t next_tok(tokenizer_t *t);
 
+char *token_string(token_type_t tok);
+
 //
 // Token stream
 // ------------
@@ -95,6 +97,7 @@ void token_stream_init_from_input(token_stream_t *ts, char *input);
 void token_stream_add(token_stream_t *ts, token_t tok);
 token_t token_stream_peek(token_stream_t *ts);
 void token_stream_advance(token_stream_t *ts);
+void token_dump(token_t tok);
 // Consumes the stream and prints it to stdout
 void token_stream_dump(token_stream_t *ts);
 
@@ -223,6 +226,8 @@ void ast_free_node(ast_node_t *node);
 void ast_add_child_to_block(ast_node_t *block, ast_node_t *child);
 void ast_add_arg_to_function(ast_node_t *fn_call, ast_node_t *arg);
 
+void ast_dump(ast_node_t *node);
+
 //
 // Parser
 // ------
@@ -241,8 +246,8 @@ void expect(parser_t *p, token_type_t token); // exits on failure
 
 ast_node_t *parse_factor(parser_t *p);
 ast_node_t *parse_term(parser_t *p);
-ast_node_t *parse_fn_call(parser_t *p);
 ast_node_t *parse_arith_expr(parser_t *p);
+ast_node_t *parse_comparison(parser_t *p);
 ast_node_t *parse_expr(parser_t *p);
 ast_node_t *parse_while_stmt(parser_t *p);
 ast_node_t *parse_for_stmt(parser_t *p);

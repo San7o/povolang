@@ -19,17 +19,20 @@ Literal:
 
 Expression:
 
-    EXPR       ::= ARITH_EXPR ( `=` EXPR )?
+    EXPR       ::= COMPARISON_EXPR ( `=` EXPR )?
 
 Note that the assignment is just an expression that might have an `=`
 at the end. This is a cool trick that C uses to keep the grammar LL(1)
 which makes it easier for parsing.
 
+    COMPARISON_OP   ::= ( `==` | `!=` | `<` | `>` | `<=` | `>=` )
+    COMPARISON_EXPR ::= ARITH_EXPR ( COMPARISON_OP ARITH_EXPR )*
+
 Math ops:
 
     ARITH_EXPR   ::= TERM ( (`+` | `-` ) TERM )*
     TERM         ::= FACTOR ( (`*` | `/`) FACTOR )*
-    FACTOR       ::= LITERAL | IDENT | FN_CALL | `(` EXPR `)`
+    FACTOR       ::= LITERAL | IDENT ( `(` ARGS `)` )? | `(` EXPR `)`
 
 Note that these math operations are simply the non-left-recursive
 version of the following grammar, which respects operator
@@ -57,6 +60,6 @@ always match the closest if. This avoids ambiguity:
 
 Functions:
 
-    FN_CALL    ::= IDENT `(` ( EXPR `,` )* `)`
+    ARGS       ::= ( EXPR `,` )*
     FN_DECL    ::= fn IDENT ( ( IDENT , )* )
     FN_IMPL    ::= fn IDENT ( ( IDENT , )* ) BLOCK

@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 ast_node_t *ast_new_node(node_type_t type)
 {
@@ -271,5 +272,204 @@ void ast_add_arg_to_function(ast_node_t *fn_call, ast_node_t *arg)
   
   fn_call->val.fn_call.args[fn_call->val.fn_call.count] = arg;
   fn_call->val.fn_call.count++;
+  return;
+}
+
+static void _ast_dump_indent(int depth)
+{
+  for (int i = 0; i < depth * 2; ++i)
+    printf(" ");
+}
+
+static void _ast_dump_impl(ast_node_t *node, int depth)
+{
+  if (!node)
+    return;
+
+  _ast_dump_indent(depth);
+  
+  switch (node->type)
+  {
+  case NODE_BINARY_OP:
+  {
+    printf("BINARY OP\n");
+    _ast_dump_indent(depth);
+    printf("op: ");
+    
+    switch (node->val.binary.op)
+    {
+    case OP_ADD: printf("+");  break;
+    case OP_SUB: printf("-");  break;
+    case OP_MUL: printf("*");  break;
+    case OP_DIV: printf("/");  break;
+    case OP_EQ:  printf("=="); break;
+    case OP_NEQ: printf("!="); break;
+    case OP_GT:  printf(">");  break;
+    case OP_LT:  printf("<");  break;
+    }
+    printf("\n");
+
+    _ast_dump_indent(depth);
+    printf("left:\n");
+    _ast_dump_impl(node->val.binary.left, depth + 1);
+    _ast_dump_indent(depth);
+    printf("right:\n");
+    _ast_dump_impl(node->val.binary.right, depth + 1);
+    
+    break;
+  }
+  case NODE_LITERAL:
+  {
+    printf("LITERAL\n");
+    _ast_dump_indent(depth);
+    switch(node->val.literal.type)
+    {
+    case LITERAL_VOID:   printf("void"); break;
+    case LITERAL_INT:    printf("int: %d", node->val.literal.val.integer);    break;
+    case LITERAL_FLOAT:  printf("float: %f", node->val.literal.val.floating); break;
+    case LITERAL_BOOL:   printf("bool: %d", node->val.literal.val.boolean);   break;
+    case LITERAL_STRING: printf("string: %s", node->val.literal.val.string);  break;
+    }
+    break;
+  }
+  case NODE_VARIABLE:
+  {
+    printf("VARIABLE: %s", node->val.variable_name);
+    break;
+  }
+  case NODE_FN_CALL:
+  {
+    printf("FN CALL\n");
+    _ast_dump_indent(depth);
+    printf("fn_name: %s\n", node->val.fn_call.fn_name);
+    
+    for (size_t i = 0; i < node->val.fn_call.count; ++i)
+    {
+      _ast_dump_indent(depth);
+      printf("args:\n");
+      _ast_dump_impl(node->val.fn_call.args[i], depth + 1);
+    }
+    
+    break;
+  }
+  case NODE_IF:
+  {
+    printf("IF\n");
+
+    _ast_dump_indent(depth);
+    printf("cond:\n");
+    _ast_dump_impl(node->val.if_stmt.cond, depth + 1);
+    _ast_dump_indent(depth);
+    printf("then:\n");
+    _ast_dump_impl(node->val.if_stmt.then_block, depth + 1);
+    _ast_dump_indent(depth);
+    printf("else:\n");
+    _ast_dump_impl(node->val.if_stmt.else_block, depth + 1);
+    
+    break;
+  }
+  case NODE_FOR:
+  {
+    printf("FOR\n");
+
+    _ast_dump_indent(depth);
+    printf("init:\n");
+    _ast_dump_impl(node->val.for_stmt.init, depth + 1);
+    _ast_dump_indent(depth);
+    printf("cond:\n");
+    _ast_dump_impl(node->val.for_stmt.cond, depth + 1);
+    _ast_dump_indent(depth);
+    printf("step:\n");
+    _ast_dump_impl(node->val.for_stmt.step, depth + 1);
+    _ast_dump_indent(depth);
+    printf("body:\n");
+    _ast_dump_impl(node->val.for_stmt.body, depth + 1);
+    
+    break;
+  }
+  case NODE_WHILE:
+  {
+    printf("WHILE\n");
+
+    _ast_dump_indent(depth);
+    printf("cond:\n");
+    _ast_dump_impl(node->val.while_stmt.cond, depth + 1);
+    _ast_dump_indent(depth);
+    printf("body:\n");
+    _ast_dump_impl(node->val.while_stmt.body, depth + 1);
+    
+    break;
+  }
+  case NODE_ASSIGNMENT:
+  {
+    printf("ASSIGNMENT\n");
+
+    _ast_dump_indent(depth);
+    printf("left:\n");
+    _ast_dump_impl(node->val.assignment.left, depth + 1);
+    _ast_dump_indent(depth);
+    printf("right:\n");
+    _ast_dump_impl(node->val.assignment.right, depth + 1);
+    
+    break;
+  }
+  case NODE_BLOCK:
+  {
+    printf("BLOCK\n");
+
+    for (size_t i = 0; i < node->val.block.count; ++i)
+    {
+      _ast_dump_indent(depth);
+      printf("children:\n");
+      _ast_dump_impl(node->val.block.children[i], depth + 1);
+    }
+    
+    break;
+  }
+  case NODE_FN_DECL:
+  {
+    printf("FN DECL\n");
+    _ast_dump_indent(depth);
+    printf("fn_name: %s\n", node->val.fn_decl.name);
+    
+    for (size_t i = 0; i < node->val.fn_decl.count; ++i)
+    {
+      _ast_dump_indent(depth);
+      printf("param: %s\n", node->val.fn_decl.params[i]);
+    }
+    
+    break;
+  }
+  case NODE_FN_IMPL:
+  {
+    printf("FN IMPL\n");
+    _ast_dump_indent(depth);
+    printf("fn_name: %s\n", node->val.fn_impl.name);
+    
+    for (size_t i = 0; i < node->val.fn_impl.count; ++i)
+    {
+      _ast_dump_indent(depth);
+      printf("param: %s\n", node->val.fn_impl.params[i]);
+    }
+
+    _ast_dump_indent(depth);
+    printf("body:\n");
+    _ast_dump_impl(node->val.fn_impl.body, depth + 1);
+    
+    break;
+  }
+  default:
+    printf("UNKNOWN NODE\n");
+    return;
+  }
+
+  printf("\n");
+}
+
+void ast_dump(ast_node_t *node)
+{
+  printf("\nAST DUMP\n");
+  printf("========\n\n");
+  _ast_dump_impl(node, 0);
   return;
 }

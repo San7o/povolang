@@ -78,46 +78,51 @@ void token_stream_init_from_input(token_stream_t *ts, char *input)
   return;
 }
 
+void token_dump(token_t tok)
+{
+  switch (tok.type)
+  {
+  case TOK_INT:           printf("%d", tok.val.integer);  break;
+  case TOK_FLOAT:         printf("%f", tok.val.floating); break;
+  case TOK_IDENT:         printf("%s", tok.val.ident);   free(tok.val.ident); break;
+  case TOK_STRING:        printf("\"%s\"", tok.val.str); free(tok.val.str);   break;
+  case TOK_IF:            printf("IF");     break;
+  case TOK_ELSE:          printf("ELSE");   break;
+  case TOK_WHILE:         printf("WHILE");  break;
+  case TOK_FOR:           printf("FOR");    break;
+  case TOK_FN:            printf("FN");     break;
+  case TOK_RETURN:        printf("RETURN"); break;
+  case TOK_OPEN_PAREN:    printf("(");      break;
+  case TOK_CLOSE_PAREN:   printf(")");      break;
+  case TOK_OPEN_SQUARE:   printf("[");      break;
+  case TOK_CLOSE_SQUARE:  printf("]");      break;
+  case TOK_OPEN_CURLY:    printf("{");      break;
+  case TOK_CLOSE_CURLY:   printf("}");      break;
+  case TOK_SEMICOLON:     printf(";");      break;
+  case TOK_COMMA:         printf(",");      break;
+  case TOK_PLUS:          printf("+");      break;
+  case TOK_MINUS:         printf("-");      break;
+  case TOK_STAR:          printf("*");      break;
+  case TOK_DIV:           printf("/");      break;
+  case TOK_NOT:           printf("!");      break;
+  case TOK_AND:           printf("&&");     break;
+  case TOK_OR:            printf("||");     break;
+  case TOK_ASSIGN:        printf("=");      break;
+  case TOK_EQUAL:         printf("==");     break;
+  case TOK_NOT_EQUAL:     printf("!=");     break;
+  case TOK_LT:            printf("<");      break;
+  case TOK_GT:            printf(">");      break;
+  default:                printf("TOK_UNKNOWN"); break;
+  }
+}
+
 void token_stream_dump(token_stream_t *ts)
 {
   token_t tok = token_stream_peek(ts);
   while (tok.type != TOK_EOF)
   {
-    switch (tok.type)
-    {
-    case TOK_INT:           printf("%d\n", tok.val.integer);  break;
-    case TOK_FLOAT:         printf("%f\n", tok.val.floating); break;
-    case TOK_IDENT:         printf("%s\n", tok.val.ident);   free(tok.val.ident); break;
-    case TOK_STRING:        printf("\"%s\"\n", tok.val.str); free(tok.val.str);   break;
-    case TOK_IF:            printf("IF\n");     break;
-    case TOK_ELSE:          printf("ELSE\n");   break;
-    case TOK_WHILE:         printf("WHILE\n");  break;
-    case TOK_FOR:           printf("FOR\n");    break;
-    case TOK_FN:            printf("FN\n");     break;
-    case TOK_RETURN:        printf("RETURN\n"); break;
-    case TOK_OPEN_PAREN:    printf("(\n");      break;
-    case TOK_CLOSE_PAREN:   printf(")\n");      break;
-    case TOK_OPEN_SQUARE:   printf("[\n");      break;
-    case TOK_CLOSE_SQUARE:  printf("]\n");      break;
-    case TOK_OPEN_CURLY:    printf("{\n");      break;
-    case TOK_CLOSE_CURLY:   printf("}\n");      break;
-    case TOK_SEMICOLON:     printf(";\n");      break;
-    case TOK_COMMA:         printf(",\n");      break;
-    case TOK_PLUS:          printf("+\n");      break;
-    case TOK_MINUS:         printf("-\n");      break;
-    case TOK_STAR:          printf("*\n");      break;
-    case TOK_DIV:           printf("/\n");      break;
-    case TOK_NOT:           printf("!\n");      break;
-    case TOK_AND:           printf("&&\n");     break;
-    case TOK_OR:            printf("||\n");     break;
-    case TOK_ASSIGN:        printf("=\n");      break;
-    case TOK_EQUAL:         printf("==\n");     break;
-    case TOK_NOT_EQUAL:     printf("!=\n");     break;
-    case TOK_LT:            printf("<\n");      break;
-    case TOK_GT:            printf(">\n");      break;
-    default:                printf("TOK_UNKNOWN\n"); break;
-    }
-
+    token_dump(tok);
+    printf("\n");
     token_stream_advance(ts);
     tok = token_stream_peek(ts);
   }

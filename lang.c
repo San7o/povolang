@@ -19,13 +19,15 @@ int main(void)
     "  }"
     "}";
   
-  token_stream_t ts;
-  token_stream_init_from_input(&ts, input);
-  token_stream_dump(&ts);
+  // token_stream_t ts;
+  // token_stream_init_from_input(&ts, input);
+  // token_stream_dump(&ts);
 
   parser_t p;
   parser_init_from_input(&p, input);
-  parse_program(&p);
+  ast_node_t *program = parse_program(&p);
+
+  ast_dump(program);
   
   return 0;
 }

@@ -264,3 +264,44 @@ token_t next_tok(tokenizer_t *t)
   tok.val.ident = str;
   return tok;
 }
+
+char *token_string(token_type_t tok)
+{
+  switch(tok)
+  {
+  case TOK_EOF:          return "EOF";
+  case TOK_INT:          return "INT";              // 123
+  case TOK_FLOAT:        return "FLOAT";            // 123.123
+  case TOK_IDENT:        return "IDENT";            // hello
+  case TOK_STRING:       return "STRING";           // "hello"
+  case TOK_TRUE:         return "TRUE";
+  case TOK_FALSE:        return "FALSE";
+  case TOK_IF:           return "IF";
+  case TOK_ELSE:         return "ELSE";
+  case TOK_WHILE:        return "WHILE";
+  case TOK_FOR:          return "FOR";
+  case TOK_FN:           return "FN";
+  case TOK_RETURN:       return "RETURN";
+  case TOK_OPEN_PAREN:   return "OPEN_PAREN";       // (
+  case TOK_CLOSE_PAREN:  return "CLOSE_PAREN";      // )
+  case TOK_OPEN_SQUARE:  return "OPEN_SQUARE";      // [
+  case TOK_CLOSE_SQUARE: return "CLOSE_SQUARE";     // ]
+  case TOK_OPEN_CURLY:   return "OPEN_CURLY";       // {
+  case TOK_CLOSE_CURLY:  return "CLOSE_CURLY";      // }
+  case TOK_SEMICOLON:    return "SEMICOLON";        // ;
+  case TOK_COMMA:        return "COMMA";            // ,
+  case TOK_PLUS:         return "PLUS";             // +
+  case TOK_MINUS:        return "MINUS";            // -
+  case TOK_STAR:         return "STAR";             // *
+  case TOK_DIV:          return "DIV";              // /
+  case TOK_NOT:          return "NOT";              // !
+  case TOK_AND:          return "AND";              // &&
+  case TOK_OR:           return "OR";               // ||
+  case TOK_ASSIGN:       return "ASSIGN";           // =
+  case TOK_EQUAL:        return "EQUAL";            // ==
+  case TOK_NOT_EQUAL:    return "NOT_EQUAL";        // !=
+  case TOK_LT:           return "LESS_THAN";        // <
+  case TOK_GT:           return "GREATER_THAN";     // >
+  default: return "TOKEN_UNKNOWN";
+  }
+}
