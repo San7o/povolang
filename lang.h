@@ -262,6 +262,6 @@ ast_node_t *parse_program(parser_t *p); // entry point
 // ---------------
 //
 
-// TODO
+bool gen_program(ast_node_t *node, const char *outfile);
 
 #endif // LANG_H

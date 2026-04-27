@@ -6,10 +6,11 @@
 #
 # Compiler flags
 #
-CFLAGS        = -Wall -Werror -Wextra -Wpedantic -std=c99
+CFLAGS        = -Wall -Werror -Wextra -Wpedantic -std=c99 \
+                $(shell llvm-config --cflags)
 DEBUG_FLAGS   = -ggdb
 RELEASE_FLAGS = -DCOMMIT_HASH=$(shell git rev-parse --verify HEAD)
-LDFLAGS       =
+LDFLAGS       = $(shell llvm-config --ldflags --system-libs --libs core)
 CC?           = gcc
 
 #
@@ -43,6 +44,10 @@ clean:
 
 distclean:
 	rm -f $(OUT_NAME)
+
+.PHONY: disas
+disas: # Disassemble test bitcode
+	llvm-dis test.bc
 
 $(OUT_NAME): $(OBJ)
 	$(CC) $(OBJ) $(LDFLAGS) $(CFLAGS) -o $(OUT_NAME)

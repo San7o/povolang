@@ -27,7 +27,9 @@ int main(void)
   parser_init_from_input(&p, input);
   ast_node_t *program = parse_program(&p);
 
-  ast_dump(program);
+  // ast_dump(program);
+
+  gen_program(program, "test.bc");
   
   return 0;
 }
