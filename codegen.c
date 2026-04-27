@@ -233,6 +233,6 @@ LLVMValueRef gen_node(cgcontext_t *cg, ast_node_t *node)
   case NODE_BLOCK:      return gen_block(cg, node);
   case NODE_FN_DECL:    return gen_fn_decl(cg, node);
   case NODE_FN_IMPL:    return gen_fn_impl(cg, node);
-  default: return NULL;
+  default:              return NULL;
   }
 }
