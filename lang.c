@@ -25,5 +25,5 @@ int main(void)
   ast_node_t *program = parse_program(&p);
   ast_dump(program);
   
-  return gen_program(program, "test.bc");
+  return gen_program(program, "test.bc") == 0;
 }
