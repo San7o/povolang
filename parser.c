@@ -56,7 +56,7 @@ void parser_init_from_input(parser_t *p, char *input)
 
 // Parse grammar
 
-// FACTOR ::= LITERAL | IDENT ( `(` ARGS `)` )? | FN_CALL | `(` EXPR `)`
+// FACTOR ::= LITERAL | IDENT ( `(` ARGS `)` )? | `(` EXPR `)`
 ast_node_t *parse_factor(parser_t *p)
 {
   ast_node_t *node = NULL;
