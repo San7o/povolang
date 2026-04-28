@@ -2,3 +2,4 @@
 lang
 *.bc
 *.ll
+*_test

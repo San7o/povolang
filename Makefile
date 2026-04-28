@@ -17,12 +17,15 @@ CC?           = gcc
 # Project files
 #
 OUT_NAME = lang
-OBJ      = lang.o \
-           ast.o \
+LIB      = ast.o \
            tokenizer.o \
            token_stream.o \
            parser.o \
            codegen.o
+OBJ      = lang.o
+TEST_OBJ =
+
+include tests/make.conf
 
 #
 # Commands
@@ -40,17 +43,23 @@ run: $(OUT_NAME)
 	./$(OUT_NAME)
 
 clean:
-	rm -f $(OBJ)
+	rm -f $(OBJ) $(LIB) $(TEST_OBJ)
 
 distclean:
-	rm -f $(OUT_NAME)
+	rm -f $(OUT_NAME) $(OUT_NAME)_test
 
 .PHONY: disas
 disas: # Disassemble test bitcode
 	llvm-dis test.bc
 
-$(OUT_NAME): $(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) $(CFLAGS) -o $(OUT_NAME)
+test: $(TEST_OBJ) $(LIB)
+	$(CC) $(TEST_OBJ) $(LIB) $(LDFLAGS) $(CFLAGS) -o $(OUT_NAME)_test
+
+check: test
+	./$(OUT_NAME)_test
+
+$(OUT_NAME): $(OBJ) $(LIB)
+	$(CC) $(OBJ) $(LIB) $(LDFLAGS) $(CFLAGS) -o $(OUT_NAME)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

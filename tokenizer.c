@@ -206,12 +206,12 @@ token_t next_tok(tokenizer_t *t)
       return tok;
     }
   }
-
+  
   // Identifier
   int start = t->pos;
-  while (isalnum(t->input[t->pos]) && t->pos < t->size) t->pos++;
+  while (isalnum(t->input[t->pos]) && t->pos <= t->size) t->pos++;
 
-  if (t->pos == t->size || t->pos == start) return tok;
+  if (t->pos == t->size + 1 || t->pos == start) return tok;
   
   int len = t->pos - start;
   // Check for keywords
@@ -263,6 +263,17 @@ token_t next_tok(tokenizer_t *t)
   tok.type = TOK_IDENT;
   tok.val.ident = str;
   return tok;
+}
+
+void free_tok(token_t *tok)
+{
+  if (!tok) return;
+
+  switch (tok->type)
+  {
+  case TOK_IDENT: free(tok->val.ident); tok->val.ident = NULL; return;
+  default: return;
+  }
 }
 
 char *token_string(token_type_t tok)

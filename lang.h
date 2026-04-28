@@ -77,6 +77,7 @@ typedef struct tokenizer {
 
 tokenizer_t init_tok(char* input);
 token_t next_tok(tokenizer_t *t);
+void free_tok(token_t *tok);
 
 char *token_string(token_type_t tok);
 
