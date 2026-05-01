@@ -34,7 +34,6 @@ all: $(OUT_NAME)
 
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: $(OUT_NAME)
-
 release: CFLAGS += $(RELEASE_FLAGS) 
 release: $(OUT_NAME)
 
@@ -52,6 +51,7 @@ distclean:
 disas: # Disassemble test bitcode
 	llvm-dis test.bc
 
+test: CFLAGS += $(DEBUG_FLAGS)
 test: $(TEST_OBJ) $(LIB)
 	$(CC) $(TEST_OBJ) $(LIB) $(LDFLAGS) $(CFLAGS) -o $(OUT_NAME)_test
 

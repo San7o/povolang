@@ -4,34 +4,27 @@
 // Github:  @San7o
 
 #include "lang.h"
-
-#include <llvm-c/Core.h>
-#include <llvm-c/BitWriter.h>
-#include <llvm-c/Analysis.h>
+#include "codegen.h"
 
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
-// Used internally to save LLVM state
-typedef struct codegen {
-  LLVMModuleRef     mod;
-  LLVMBuilderRef    builder;
-} cgcontext_t;
+void cgcontext_init(cgcontext_t *cg, char *module_name)
+{
+  if (!cg) return;
+  
+  cg->mod     = LLVMModuleCreateWithName(module_name);
+  cg->builder = LLVMCreateBuilder();
+}
 
-// Forward declarations
-LLVMValueRef gen_node(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_fn_impl(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_fn_decl(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_block(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_assignment(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_while(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_for(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_if(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_fn_call(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_variable(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_literal(cgcontext_t *cg, ast_node_t *node);
-LLVMValueRef gen_binary(cgcontext_t *cg, ast_node_t *node);
+void cgcontext_free(cgcontext_t *cg)
+{
+  if (!cg) return;
+  
+  LLVMDisposeBuilder(cg->builder);
+  LLVMDisposeModule(cg->mod);
+}
 
 //
 // To generate LLVM IR, you need three main things:
@@ -94,13 +87,10 @@ LLVMValueRef gen_binary(cgcontext_t *cg, ast_node_t *node)
   {
   case OP_ADD:
     return LLVMBuildAdd(cg->builder, left, right, "addtmp");
-    break;
   case OP_SUB:
     return LLVMBuildSub(cg->builder, left, right, "subtmp");
-    break;
   case OP_MUL:
     return LLVMBuildMul(cg->builder, left, right, "multmp");
-    break;
   case OP_DIV:
     return LLVMBuildSDiv(cg->builder, left, right, "divtmp");
   case OP_EQ:
